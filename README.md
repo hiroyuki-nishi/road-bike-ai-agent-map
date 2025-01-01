@@ -1,4 +1,5 @@
 # road-bike-ai-agent-map
+![スクリーンショット 2025-01-01 19 09 11](https://github.com/user-attachments/assets/e7bb5e87-585d-48ec-a932-004c326805cb)
 
 This application is a fullstack route planner that uses AI to generate cycling routes based on natural language prompts. It consists of a FastAPI backend with LangGraph for AI processing and a React frontend with Google Maps integration.
 
