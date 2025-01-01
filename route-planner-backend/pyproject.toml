@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = ["Devin AI <158243242+devin-ai-integration[bot]@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["standard"], version = "^0.115.6"}
+psycopg = {extras = ["binary"], version = "^3.2.3"}
+langgraph = "^0.2.60"
+langchain = "^0.3.13"
+openai = "^1.58.1"
+python-dotenv = "^1.0.1"
+googlemaps = "^4.10.0"
+geopy = "^2.4.1"
+langchain-community = "^0.3.13"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
