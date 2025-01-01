@@ -4,8 +4,8 @@ from functools import lru_cache
 import os
 from dotenv import load_dotenv
 
-from models import RouteRequest, RouteResponse
-from agent import RouteAgent
+from app.models import RouteRequest, RouteResponse
+from app.agent import RouteAgent
 
 load_dotenv()
 
