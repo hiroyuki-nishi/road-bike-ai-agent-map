@@ -9,8 +9,9 @@ class RouteAgent:
         self.openai_api_key = openai_api_key
         self.google_maps_api_key = google_maps_api_key
         self.llm = ChatOpenAI(api_key=openai_api_key)
-        
-    async def process_route_request(self, request: RouteRequest) -> RouteResponse:
+
+    @staticmethod
+    async def process_route_request(request: RouteRequest) -> RouteResponse:
         """Process a route request and return cycling route suggestions."""
         # Mock implementation that will work without API keys
         # This provides realistic-looking data for testing the frontend
