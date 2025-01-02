@@ -14,6 +14,7 @@ function App() {
   const { toast } = useToast();
 
   const handleSearch = async () => {
+    setRoutes([])
     if (!prompt.trim()) {
       toast({
         title: "Error",
@@ -73,11 +74,6 @@ function App() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 className="flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !isLoading) {
-                    handleSearch();
-                  }
-                }}
               />
               <Button 
                 onClick={handleSearch} 
