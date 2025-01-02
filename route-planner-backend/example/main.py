@@ -7,11 +7,28 @@ from langchain_openai import ChatOpenAI
 from langgraph.constants import END
 from langgraph.graph import StateGraph
 
+from example.roles import ROLES
 from example.state import State
 
 def selection_node(state: State) -> dict[str, Any]:
-    # TODO
-    pass
+    query = state.query
+    role_options = "\n".join({f"{k}.{v['name']}: {v['description']}" for k, v in ROLES.items()})
+    prompt = ChatPromptTemplate.from_template(
+        f"""質問を分析し、最も適切な回答担当ロールを選択してください。
+        
+        選択肢：
+        {role_options}
+        
+        回答は選択肢の番号（１、２、または３）のみを返してください。
+        
+        質問：{query}
+        """.strip()
+    )
+    # 選択肢の番号のみを返すことを期待したいため、max_tokensを1に変更
+    chain = prompt | llm.with_config(configurable=dict(max_tokens=1)) | StrOutputParser()
+    role_number = chain.invoke({"role_options": role_options, "query": query})
+    selected_role = ROLES[role_number.strip()]["name"]
+    return {"current_role": selected_role}
 
 def answering_node(state: State) -> dict[str, Any]:
     query = state.query
