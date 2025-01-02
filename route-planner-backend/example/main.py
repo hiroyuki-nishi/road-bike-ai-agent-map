@@ -14,7 +14,7 @@ def selection_node(state: State) -> dict[str, Any]:
     query = state.query
     role_options = "\n".join({f"{k}.{v['name']}: {v['description']}" for k, v in ROLES.items()})
     prompt = ChatPromptTemplate.from_template(
-        f"""質問を分析し、最も適切な回答担当ロールを選択してください。
+        """質問を分析し、最も適切な回答担当ロールを選択してください。
         
         選択肢：
         {role_options}
@@ -33,10 +33,20 @@ def selection_node(state: State) -> dict[str, Any]:
 def answering_node(state: State) -> dict[str, Any]:
     query = state.query
     role = state.current_role
-
-    # ユーザーからの質問内容と選択されたロールをもとに回答を生成するロジック
-    generated_message = "" # TODO
-    return {"messages": [generated_message]}
+    role_details = "\n".join([f"- {v['name']}: {v['details']}" for k, v in ROLES.values()])
+    prompt = ChatPromptTemplate.from_template(
+        """あなたは{role}として回答してください。以下の質問に対して、あなたの役割に基づいた適切な回答を提供してください。
+        
+        役割の詳細：
+        {role_details}
+        
+        質問：{query}
+        
+        回答：""".strip()
+    )
+    chain = prompt | llm | StrOutputParser()
+    answer = chain.invoke({"role": role, "role_details": role_details, "query": query})
+    return {"messages": [answer]}
 
 def check_node(state: State) -> dict[str, Any]:
     query = state.query
