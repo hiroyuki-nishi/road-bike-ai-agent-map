@@ -1,5 +1,9 @@
+import logging
 from typing import List, Dict, Any, TypedDict, Sequence, Union, cast, Optional
 import json
+from logging import getLogger
+
+
 from langgraph.graph import StateGraph
 from pprint import pprint
 from langchain_community.chat_models import ChatOpenAI
@@ -10,13 +14,46 @@ import googlemaps
 from googlemaps.client import Client as GoogleMapsClient
 from googlemaps import geocoding, directions
 
+logging.basicConfig(level=logging.INFO)
+logger = getLogger(__name__)
+
 class RouteAgent:
     def __init__(self, openai_api_key: str, google_maps_api_key: str):
         self.openai_api_key = openai_api_key
         self.google_maps_api_key = google_maps_api_key
         self.llm = ChatOpenAI(api_key=openai_api_key)
         self.gmaps: GoogleMapsClient = googlemaps.Client(key=google_maps_api_key)
-        
+
+    @staticmethod
+    def convert_to_route_response(route_data: Dict[str, Any]) -> RouteResponse:
+        """Convert route details to response format."""
+        print("---------debug2--------")
+        routes = []
+        distances = []
+        descriptions = []
+
+        for route_detail in route_data["route_details"]:
+            route_points = [
+                RoutePoint(
+                    lat=point["lat"],
+                    lng=point["lng"],
+                    name=point["name"]
+                )
+                for point in route_detail["points"]
+            ]
+            routes.append(route_points)
+            distances.append(route_detail["distance"])
+            descriptions.append(route_detail["description"])
+
+        print("---------debug3--------")
+        pprint(routes)
+
+        return RouteResponse(
+            routes=routes,
+            distances=distances,
+            descriptions=descriptions
+        )
+
     async def process_route_request(self, request: RouteRequest) -> RouteResponse:
         """Process a route request and return cycling route suggestions using LangGraph workflow."""
         pprint(f"prompt: {request.prompt}")
@@ -32,46 +69,17 @@ class RouteAgent:
                 "errors": []
             }
             final_state = app.invoke(initial_state)
+            print("---------debug1--------")
             pprint(final_state)
+            return self.convert_to_route_response(route_data=final_state)
         except Exception as e:
-            print(f"Workflow execution error: {e}")
-            final_state = {
-                "errors": [str(e)],
-                "route_details": [],
-                "extracted_locations": [],
-                "suggested_routes": []
-            }
-        
-        if final_state.get("errors"):
+            logger.error(f"Workflow execution error: {e}")
             return RouteResponse(
                 routes=[],
                 distances=[],
                 descriptions=[]
             )
-        
-        # Convert route details to response format
-        routes = []
-        distances = []
-        descriptions = []
-        
-        for route_detail in final_state["route_details"]:
-            route_points = [
-                RoutePoint(
-                    lat=point["lat"],
-                    lng=point["lng"],
-                    name=point["name"]
-                )
-                for point in route_detail["points"]
-            ]
-            routes.append(route_points)
-            distances.append(route_detail["distance"])
-            descriptions.append(route_detail["description"])
-        
-        return RouteResponse(
-            routes=routes,
-            distances=distances,
-            descriptions=descriptions
-        )
+
 
     def _create_workflow(self):
         """Create a LangGraph workflow for route planning.
