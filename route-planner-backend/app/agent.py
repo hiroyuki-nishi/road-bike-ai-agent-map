@@ -114,16 +114,14 @@ class RouteAgent:
                 prompt_template = ChatPromptTemplate.from_template("""
 あなたは自転車ルートプランナーです。以下の入力に基づいて、自転車での走行に適したルートを提案してください。
 
-ユーザーの入力: {user_input}
+ユーザーのルート候補の入力: {user_input}
 
-入力から出発地点を抽出し、その周辺の自転車で走りやすいルートを3つ提案してください。
-各ルートは異なる方向に向かい、景色や道路状況が良く、サイクリストに人気のスポットを含むようにしてください。
+入力から出発地点を抽出し、その周辺の自転車で走りやすいルートを1つ提案してください。
 
 以下の形式でJSONを返してください（必ず有効なJSONフォーマットで）:
 {{
     "start_location": {{
-        "name": "入力から抽出した出発地点の名前",
-        "description": "場所の説明"
+        "name": {start_location_name}
     }},
     "constraints": {{
         "radius_km": 100,
@@ -150,7 +148,7 @@ class RouteAgent:
 4. 説明は具体的に記載してください
 """)
                 chain = prompt_template | self.llm
-                llm_response = chain.invoke({"user_input": state["prompt"]})
+                llm_response = chain.invoke({"user_input": state["prompt"], "start_location_name": "樟葉駅"})
                 import json
                 try:
                     route_data = json.loads(str(llm_response.content))
