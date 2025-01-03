@@ -12,3 +12,6 @@ class State(BaseModel):
     judgement_reason: str = Field("", description="品質チェックの判定理由")
 
 
+class Judgment(BaseModel):
+    reason: str = Field("", description="判定理由")
+    judge: bool = Field(False, description="判定結果")

@@ -8,7 +8,8 @@ from langgraph.constants import END
 from langgraph.graph import StateGraph
 
 from example.roles import ROLES
-from example.state import State
+from example.models import State, Judgment
+
 
 def selection_node(state: State) -> dict[str, Any]:
     query = state.query
@@ -50,11 +51,26 @@ def answering_node(state: State) -> dict[str, Any]:
 
 def check_node(state: State) -> dict[str, Any]:
     query = state.query
-    current_message = state.messages[-1]
-    # 回答の品質をチェックするロジック
-    judge = False # TODO
-    reason = "" # TODO
-    return {"current_judge": judge, "judgement_reason": reason}
+    answer = state.messages[-1]
+    prompt = ChatPromptTemplate.from_template(
+        """以下の回答の品質をチェックし、問題がある場合は'False'、問題がない場合は
+        'True'を回答してください。また、その判断理由も説明してください。
+        
+        ユーザーからの質問：{query}
+        
+        質問：{query}
+        
+        回答：{answer}
+        
+        回答の品質が高い場合は「Yes」、低い場合は「No」を返してください。
+        """.strip()
+    )
+    chain = prompt | llm.with_structured_output(Judgment)
+    r: Judgment = chain.invoke({"query": query, "answer": answer})
+    return {
+        "current_judge": r.judge,
+        "judgement_reason": r.reason
+    }
 
 
 """
@@ -80,7 +96,12 @@ def check_node(state: State) -> dict[str, Any]:
                          (終点ノード)
 """
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.0)
+print("----------START----------")
+llm = ChatOpenAI(
+    model="gpt-4o",
+    api_key="",
+    temperature=0.0
+)
 # 後からmax_tokensの値を変更できるように、変更可能なフィールドを宣言
 llm = llm.configurable_fields(max_tokens=ConfigurableField(id="max_tokens"))
 
@@ -88,9 +109,15 @@ llm = llm.configurable_fields(max_tokens=ConfigurableField(id="max_tokens"))
 # StateGraphには、input_schema, output_schema, state_schemaなどを指定することができます。
 # 要するに、どういったデータ型をワークフローで扱うかという定義設定
 workflow = StateGraph(State)
+
+workflow.add_node("selection", selection_node)
+workflow.add_node("answering", answering_node)
+workflow.add_node("check", check_node)
+
 workflow.set_entry_point("selection")
 # selectionノートからansweringノートにエッジを張る
 workflow.add_edge("selection", "answering")
+workflow.add_edge("answering", "check")
 
 workflow.add_conditional_edges(
     "check",
@@ -99,5 +126,7 @@ workflow.add_conditional_edges(
 )
 compiled = workflow.compile()
 
-initial_state = State(query="ユーザーからの質問内容")
+initial_state = State(query="生成AIについて教えてください")
 result = compiled.invoke(initial_state)
+print(result)
+print("----------END----------")
