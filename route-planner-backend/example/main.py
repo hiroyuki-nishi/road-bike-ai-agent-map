@@ -10,9 +10,10 @@ from langgraph.constants import END
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv
 from logging import getLogger
+from IPython.display import Image
 
-from example.roles import ROLES
-from example.models import State, Judgment
+from roles import ROLES
+from models import State, Judgment
 
 
 def selection_node(state: State) -> dict[str, Any]:
@@ -132,6 +133,7 @@ workflow.add_conditional_edges(
     {True: END, False: "selection"}
 )
 compiled = workflow.compile()
+Image(compiled.get_graph().draw_png())
 
 initial_state = State(query="生成AIについて教えてください")
 result = compiled.invoke(initial_state)
