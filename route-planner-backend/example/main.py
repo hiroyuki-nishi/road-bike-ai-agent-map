@@ -133,9 +133,9 @@ workflow.add_conditional_edges(
     {True: END, False: "selection"}
 )
 compiled = workflow.compile()
-Image(compiled.get_graph().draw_png())
 
 initial_state = State(query="生成AIについて教えてください")
 result = compiled.invoke(initial_state)
 logger.info(result)
 logger.info("----------END----------")
+Image(compiled.get_graph().draw_png("graph.png"))
