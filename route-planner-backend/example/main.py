@@ -1,3 +1,5 @@
+import logging
+import os
 from typing import Any
 
 from langchain_core.output_parsers import StrOutputParser
@@ -6,6 +8,8 @@ from langchain_core.runnables import ConfigurableField
 from langchain_openai import ChatOpenAI
 from langgraph.constants import END
 from langgraph.graph import StateGraph
+from dotenv import load_dotenv
+from logging import getLogger
 
 from example.roles import ROLES
 from example.models import State, Judgment
@@ -34,7 +38,7 @@ def selection_node(state: State) -> dict[str, Any]:
 def answering_node(state: State) -> dict[str, Any]:
     query = state.query
     role = state.current_role
-    role_details = "\n".join([f"- {v['name']}: {v['details']}" for k, v in ROLES.values()])
+    role_details = "\n".join([f"- {v['name']}: {v['details']}" for v in ROLES.values()])
     prompt = ChatPromptTemplate.from_template(
         """あなたは{role}として回答してください。以下の質問に対して、あなたの役割に基づいた適切な回答を提供してください。
         
@@ -96,10 +100,13 @@ def check_node(state: State) -> dict[str, Any]:
                          (終点ノード)
 """
 
-print("----------START----------")
+logging.basicConfig(level=logging.INFO)
+logger = getLogger(__name__)
+logger.info("----------START----------")
+load_dotenv()
 llm = ChatOpenAI(
     model="gpt-4o",
-    api_key="",
+    api_key=os.environ['OPENAI_API_KEY'],
     temperature=0.0
 )
 # 後からmax_tokensの値を変更できるように、変更可能なフィールドを宣言
@@ -128,5 +135,5 @@ compiled = workflow.compile()
 
 initial_state = State(query="生成AIについて教えてください")
 result = compiled.invoke(initial_state)
-print(result)
-print("----------END----------")
+logger.info(result)
+logger.info("----------END----------")
