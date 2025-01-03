@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, TypedDict, Sequence, Union, cast, Optional
 import json
 from langgraph.graph import StateGraph
-from langgraph.prebuilt import ToolExecutor
+from pprint import pprint
 from langchain_community.chat_models import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from app.models import RouteRequest, RouteResponse, RoutePoint
@@ -19,35 +19,22 @@ class RouteAgent:
         
     async def process_route_request(self, request: RouteRequest) -> RouteResponse:
         """Process a route request and return cycling route suggestions using LangGraph workflow."""
-        print(f"Starting route request processing with prompt: {request.prompt}")
-        print(f"OpenAI API Key configured: {'*' * 5}{self.openai_api_key[-4:]}")
-        print(f"Google Maps API Key configured: {'*' * 5}{self.google_maps_api_key[-4:]}")
-        
-        # Initialize state
-        initial_state = {
-            "prompt": request.prompt,
-            "start_location": {},
-            "constraints": {},
-            "suggested_routes": [],
-            "extracted_locations": [],
-            "route_details": [],
-            "errors": []
-        }
-        
-        # Run the workflow
+        pprint(f"prompt: {request.prompt}")
         try:
-            # Get the compiled workflow
             app = self._create_workflow()
-            print("Created workflow, executing with initial state:", initial_state)
-            # Execute the workflow
+            initial_state = {
+                "prompt": request.prompt,
+                "start_location": {},
+                "constraints": {},
+                "suggested_routes": [],
+                "extracted_locations": [],
+                "route_details": [],
+                "errors": []
+            }
             final_state = app.invoke(initial_state)
-            print("Workflow execution completed. Final state:", final_state)
+            pprint(final_state)
         except Exception as e:
             print(f"Workflow execution error: {e}")
-            print(f"Error type: {type(e).__name__}")
-            print(f"Error details: {str(e)}")
-            import traceback
-            print(f"Traceback: {traceback.format_exc()}")
             final_state = {
                 "errors": [str(e)],
                 "route_details": [],
@@ -56,8 +43,6 @@ class RouteAgent:
             }
         
         if final_state.get("errors"):
-            print("Workflow errors:", final_state["errors"])
-            # Return empty response in case of errors
             return RouteResponse(
                 routes=[],
                 distances=[],
